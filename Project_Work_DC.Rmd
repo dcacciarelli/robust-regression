@@ -1,0 +1,379 @@
+---
+title: "BDA - Project Work"
+author: "Davide Cacciarelli"
+output:
+  pdf_document:
+    toc: no
+    toc_depth: 1
+  html_document:
+    toc: no
+    toc_depth: '1'
+    df_print: paged
+  word_document:
+    toc: yes
+    toc_depth: '1'
+urlcolor: blue
+---
+
+```{r, include=FALSE}
+library(aaltobda)
+library(loo)
+library(rstan)
+options(mc.cores = parallel::detectCores())
+rstan_options(auto_write = TRUE)
+library(bayesplot)
+library(rstanarm)
+library(ggplot2)
+library(mcmcplots)
+library(dplyr)
+```
+
+# 1. Introduction
+
+The high production rate of industrial and chemical processes makes it unfeasible to label each observation with its corresponding label. This is why it often important to use soft sensors for the monitoring of quality-related characteristics or hard-to-measure variables. We can differentiate between different kind of soft sensors but the ones that are gaining increased popularity, due to their versatility, are the data-driven ones. Data-driven soft sensors are usually based on predictive models that try to use easy-to-measure variables as predictors for the variable of interest, whose measurements are not easily tracked during routine operations.
+
+
+To this scope, we investigate the use of a multivariate linear regression model for soft sensors, undertaking a Bayesian approach. The data used for this project is related to a debutanizer column, which is characterized by 7 process variables (or easy-to-measure variables) and an output variable, the butane content.
+
+```{r, echo=FALSE,fig.width=3.5, fig.height=3.5}
+dat <- read.csv("/Users/dcac/Desktop/PhD/Data/Soft_Sensors/debutanizer.csv")
+df_train = dat %>% slice(which(row_number() %% 2 == 0 & row_number() <= 2000))
+df_test = dat %>% slice(which(row_number() %% 2 == 1 & row_number() <= 2000))
+plot.ts(df_train)
+```
+
+
+
+# 2. Model Description
+
+Two models have been used and compared. The first model is a multiple linear regression model which assumes the normality of the residuals. The linear model is of the form: $\hat{y} = \alpha + \beta x$.
+Then we know that $y = \hat{y} + \epsilon$, where $\epsilon \sim N(0, \sigma)$, from which we can derive $y - \hat{y} \sim N(0, \sigma)$, and finally:
+
+$$y \sim N(\alpha + \beta x, \sigma)$$
+The second model is a robust multiple linear regression model. In this model, the normality assumption of the errors is discarded in favor of a more flexible t-student distribution, which should be able to better deal with the presence of outliers. In this case the model becomes:
+
+$$y \sim t(\nu, \alpha + \beta x, \sigma)$$
+With regards to the priors, we used weakly informative priors for both the intercept, the model coefficients and the scale of the error. Dealing with data that is scaled between 0 and 1, we used:
+\begin{itemize}
+  \item Intercept: $\alpha \sim N(0, 10)$
+  \item Coefficients: $\beta \sim N(0, 10)$
+  \item Error scale: $\sigma \sim Inv-\chi^2(10)$
+\end{itemize}
+
+
+```{r, results = 'hide'}
+# 1st Model
+write("
+data {
+  int<lower=0> N;                               // number of observations
+  int<lower=0> K;                               // number of predictors
+  matrix[N, K] x;                               // predictor matrix
+  vector[N] y;                                  // outcome vector
+}
+parameters {
+  real alpha;                                   // intercept
+  vector[K] beta;                               // coefficients for predictors
+  real<lower=0> sigma;                          // error scale
+}
+model {
+  alpha ~ normal(0, 10);                        // prior for the intercept
+  beta ~ normal(0, 10);                         // prior for the coefficients
+  sigma ~ inv_chi_square(10);                   // prior for the error scale
+
+  y ~ normal(x * beta + alpha, sigma);          // likelihood
+}
+generated quantities{
+  real log_lik[N];
+  real y_rep[N];
+  for (i in 1:N){
+  // posterior predictive replicate
+  y_rep[i] = normal_rng(x[i] * beta + alpha, sigma);
+  // log-likelihood
+  log_lik[i] = normal_lpdf(y[i] | x[i] * beta + alpha, sigma);
+  }
+}",
+
+"Multiple_Linear_Regression.stan")
+```
+
+```{r, echo=FALSE, results = 'hide'}
+MLR <- "Multiple_Linear_Regression.stan"
+debutanizer <- list(N=nrow(dat), K=7, x=as.matrix(dat[1:7]), y=dat$y)
+fit_mlr <- stan(file=MLR, data=debutanizer, warmup=1000, iter=2000, chains=5)
+```
+
+
+```{r, results = 'hide'}
+# 2nd Model
+write("
+data {
+  int<lower=0> N;                               // number of observations
+  int<lower=0> K;                               // number of predictors
+  matrix[N, K] x;                               // predictor matrix
+  vector[N] y;                                  // outcome vector
+  real<lower=0> nu;                             // df t-student
+}
+parameters {
+  real alpha;                                   // intercept
+  vector[K] beta;                               // coefficients for predictors
+  real<lower=0> sigma;                          // error scale
+}
+model {
+  alpha ~ normal(0, 10);                        // prior for the intercept
+  beta ~ normal(0, 10);                         // prior for the coefficients
+  sigma ~ inv_chi_square(10);                   // prior for the error scale
+  y ~ student_t(nu, x * beta + alpha, sigma);   // likelihood
+}
+generated quantities{
+  real log_lik[N];
+  real y_rep[N];
+  for (i in 1:N){
+  // posterior predictive replicate
+  y_rep[i] = student_t_rng(nu, x[i] * beta + alpha, sigma);
+  // log-likelihood
+  log_lik[i] = student_t_lpdf(y[i] | nu, x[i] * beta + alpha, sigma);
+  }
+}",
+
+"Robust_Regression.stan")
+```
+
+```{r, echo=FALSE, results = 'hide'}
+RR <- "Robust_Regression.stan"
+debutanizer_RR <- list(N=nrow(dat), K=7, x=as.matrix(dat[1:7]), y=dat$y, nu=10)
+fit_RR <- stan(file=RR, data=debutanizer_RR, warmup=1000, iter=2000, chains=5)
+```
+
+To favor the convergence of the Markov chains, a QR reparametrization can been performed. As described in the \texttt{stan} guide, if we do not have an informative prior on the location of the regression coefficients, then it is suggested to reparameterize the model so that the regression coefficients are a generated quantity. In that case, it usually does not matter much what prior is used on on the reparameterized regression coefficients and almost any weakly informative  prior that scales with the outcome will do. The QR reparametrization is performed by decomposing the design matrix $x$ into an orthogonal matrix $Q$ and an upper-triangular matrix $R$: $x = QR$. This decomposition helps the convergence of the Markov chains because the columns of $Q^*$ are orthogonal and its covariance matrix is an identity matrix, making it easier for the Markov chain to move around the $\theta$-space. The models and results from the QR reparametrization are included in Appendix B. 
+
+# 3. Convergence Diagnostics
+
+To assess the convergence of he Markov chains, we firstly show the plot of the chains for the parameters $\alpha$ and $\beta$. Then, we also report the $\hat{R}$ values for the same parameters. The $\hat{R}$ function produces $\hat{R}$ convergence diagnostic, which compares the between- and within-chain estimates for model parameters and other univariate quantities of interest. It is used since visual inspection is not a safe assessment of convergence for complex scenarios. When $\hat{R}$ is high (perhaps greater than 1.1 or 1.2), then we should run our chains out longer to improve convergence to the stationary distribution. If we have more than one parameter, then we need to calculate the potential scale reduction factor for each parameter. We should run our chains out long enough so that all the potential scale reduction factors are small enough. The version of the R-hat used is the one from the \texttt{rstan} package, that follows the theory introduced in \textit{Rank-normalization, folding, and localization: An improved R-hat for assessing convergence of MCMC}, by Vehtari et al. (2019).
+
+## 3.1 Markov Chains
+
+### 1st Model
+
+```{r, echo=FALSE, out.width = '80%'}
+posterior1 <- as.array(fit_mlr)
+np1 <- nuts_params(fit_mlr)
+color_scheme_set("mix-blue-pink")
+mcmc_trace(posterior1, pars=c("alpha", "beta[1]", "beta[2]", "beta[3]",
+                              "beta[4]", "beta[5]", "beta[6]", "beta[7]"),
+           np=np1, facet_args=list(ncol=4, strip.position="top"))
+```
+
+
+### 2nd Model
+
+```{r, echo=FALSE, out.width = '80%'}
+posterior2 <- as.array(fit_RR)
+np2 <- nuts_params(fit_RR)
+mcmc_trace(posterior2, pars=c("alpha", "beta[1]", "beta[2]", "beta[3]",
+                              "beta[4]", "beta[5]", "beta[6]", "beta[7]"),
+           np=np2, facet_args=list(ncol=4, strip.position="top"))
+```
+
+Appendix A contains additional plots containing the density plots for the two models parameters.
+
+## 3.2. R-hat Values
+
+
+### 1st Model
+
+```{r, echo=FALSE}
+as.data.frame(t(rhat(fit_mlr))) %>% dplyr:::select("alpha", starts_with("beta"))
+```
+
+### 2nd Model
+
+```{r, echo=FALSE}
+as.data.frame(t(rhat(fit_RR))) %>% dplyr:::select("alpha", starts_with("beta"))
+```
+
+
+# 4. Model Comparisions
+
+To compare the two models, we first use the LOO scores and the PSIS diagnostic plots where, in order for the models to be correctly specified, all the values of $\hat{k}$ should be $\leq 0.7$. Successively, we compare the two models using $y_{rep}$ values, which is an analysis where we are trying to replicate the input data by simulating from the model. We do so by taking as many as many draws from the predictive distribution as the size of the original data. For the check, $y_{rep}$ values are plotted against the true observed values.
+
+
+## 4.1. LOO \& PSIS
+
+### 1st Model
+
+```{r, echo=FALSE, out.width = '50%'}
+loo1 <- loo(fit_mlr, save_psis = TRUE)
+print(loo1)
+plot(loo1)
+```
+
+### 2nd Model
+
+```{r, echo=FALSE, out.width = '50%'}
+loo2 <- loo(fit_RR, save_psis = TRUE)
+print(loo2)
+plot(loo2)
+```
+
+
+## 4.2. Y-rep Values
+
+### 1st Model
+
+```{r, echo=FALSE, out.width = '50%'}
+par(mfrow=c(1,2))
+mcmc = as.data.frame(fit_mlr) %>% dplyr:::select(starts_with("y_rep"))
+ppc_dens_overlay(dat$y, as.matrix(mcmc)) + xlim(-0.5, 1)
+```
+
+### 2nd Model
+
+```{r, echo=FALSE, out.width = '50%'}
+mcmc2 = as.data.frame(fit_RR) %>% dplyr:::select(starts_with("y_rep"))
+ppc_dens_overlay(dat$y, as.matrix(mcmc2)) + xlim(-0.5, 1)
+```
+
+
+# 5) Conclusion
+
+From the previous sections we can see that both models achieve nice convergence results and, from the PSIS diagnostics, appear to be correctly specified. However, considering the plot showing the $y_{rep}$ values, it seems that the robust regression model better fit the data, being less sensitive to the outliers present in the observations.
+
+
+# Appendices 
+
+## A: additional plots
+
+## 1st model
+```{r, echo=FALSE, out.width = '80%'}
+# 1st model
+stan_dens(fit_mlr, pars=c("alpha", "beta[1]", "beta[2]", "beta[3]",
+                                   "beta[4]", "beta[5]", "beta[6]", "beta[7]"),
+          ncol=4)
+```
+
+
+## 2nd model
+```{r, echo=FALSE, out.width = '80%'}
+# 2nd model
+stan_dens(fit_RR, pars=c("alpha", "beta[1]", "beta[2]", "beta[3]",
+                                   "beta[4]", "beta[5]", "beta[6]", "beta[7]"),
+          ncol=4)
+```
+
+
+## B: QR reparametrization
+
+### Models
+
+```{r, results = 'hide'}
+# 1st Model
+write("
+data {
+  int<lower=0> N;                             // number of observations
+  int<lower=0> K;                             // number of predictors
+  matrix[N, K] x;                             // predictor matrix
+  vector[N] y;                                // outcome vector
+}
+transformed data {
+  matrix[N, K] Q_ast;
+  matrix[K, K] R_ast;
+  matrix[K, K] R_ast_inverse;
+  // thin and scale the QR decomposition
+  Q_ast = qr_thin_Q(x) * sqrt(N - 1);           // Q*
+  R_ast = qr_thin_R(x) / sqrt(N - 1);           // R*
+  R_ast_inverse = inverse(R_ast);
+}
+parameters {
+  real alpha;                                   // intercept
+  vector[K] theta;                              // coefficients on Q_ast
+  real<lower=0> sigma;                          // error scale
+}
+model {
+  y ~ normal(Q_ast * theta + alpha, sigma);     // likelihood
+}
+generated quantities {
+  vector[K] beta;
+  real log_lik[N];
+  real y_rep[N];
+  // coefficients on x
+  beta = R_ast_inverse * theta; 
+  for (i in 1:N){
+  // posterior predictive replicate
+  y_rep[i] = normal_rng(Q_ast[i] * theta + alpha, sigma);
+  // log-likelihood
+  log_lik[i] = normal_lpdf(y[i] | Q_ast[i] * theta + alpha, sigma);
+  }
+}",
+
+"Multiple_Linear_Regression_QR.stan")
+
+MLR_QR <- "Multiple_Linear_Regression_QR.stan"
+debutanizer_QR <- list(N=nrow(dat), K=7, x=as.matrix(dat[1:7]), y=dat$y)
+fit_mlr_QR <- stan(file=MLR_QR, data=debutanizer_QR, warmup=1000, iter=2000, 
+                   chains=5)
+```
+
+```{r, results = 'hide'}
+# 2nd Model
+write("
+data {
+  int<lower=0> N;                               // number of observations
+  int<lower=0> K;                               // number of predictors
+  matrix[N, K] x;                               // predictor matrix
+  vector[N] y;                                  // outcome vector
+  real<lower=0> nu;                             // df t-student
+}
+transformed data {
+  matrix[N, K] Q_ast;
+  matrix[K, K] R_ast;
+  matrix[K, K] R_ast_inverse;
+  // thin and scale the QR decomposition
+  Q_ast = qr_thin_Q(x) * sqrt(N - 1);           // Q*
+  R_ast = qr_thin_R(x) / sqrt(N - 1);           // R*
+  R_ast_inverse = inverse(R_ast);
+}
+parameters {
+  real alpha;                                   // intercept
+  vector[K] theta;                              // coefficients on Q_ast
+  real<lower=0> sigma;                          // error scale
+}
+model {
+  y ~ student_t(nu, Q_ast * theta + alpha, sigma);     // likelihood
+}
+generated quantities {
+  vector[K] beta;
+  real log_lik[N];
+  real y_rep[N];
+  // coefficients on x
+  beta = R_ast_inverse * theta; 
+  for (i in 1:N){
+  // posterior predictive replicate
+  y_rep[i] = student_t_rng(nu, Q_ast[i] * theta + alpha, sigma);
+  // log-likelihood
+  log_lik[i] = student_t_lpdf(y[i]  | nu, Q_ast[i] * theta + alpha, sigma);
+  }
+}",
+
+"Robust_Regression_QR.stan")
+
+RR_QR <- "Robust_Regression_QR.stan"
+debutanizer_RR_QR <- list(N=nrow(dat), K=7, x=as.matrix(dat[1:7]), y=dat$y, nu=10)
+fit_RR_QR <- stan(file=RR_QR, data=debutanizer_RR_QR, warmup=1000, iter=2000, chains=5)
+```
+
+### R-hat Values
+
+```{r, echo=FALSE}
+as.data.frame(t(rhat(fit_mlr_QR))) %>% dplyr:::select("alpha", starts_with("beta"))
+```
+
+```{r, echo=FALSE}
+as.data.frame(t(rhat(fit_RR_QR))) %>% dplyr:::select("alpha", starts_with("beta"))
+```
+
+
+
+
+
+
+
