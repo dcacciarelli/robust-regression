@@ -37,14 +37,11 @@ print(fit_normal_model)
 posterior_normal_model <- as.array(fit_normal_model)
 np_normal_model <- nuts_params(fit_normal_model)
 color_scheme_set("mix-blue-pink")
-mcmc_trace(posterior_normal_model, pars=c("alpha", "beta[1]", "beta[2]", "beta[3]",
-                              "beta[4]", "beta[5]", "beta[6]", "beta[7]"),
+mcmc_trace(posterior_normal_model, pars=c("alpha", "beta[1]", "beta[2]", "beta[3]", "beta[4]", "beta[5]", "beta[6]", "beta[7]"), 
            np=np_normal_model, facet_args=list(ncol=4, strip.position="top"))
 
 # Check parameters distribution
-stan_dens(fit_normal_model, pars=c("alpha", "beta[1]", "beta[2]", "beta[3]",
-                          "beta[4]", "beta[5]", "beta[6]", "beta[7]"),
-          ncol=4)
+stan_dens(fit_normal_model, pars=c("alpha", "beta[1]", "beta[2]", "beta[3]", "beta[4]", "beta[5]", "beta[6]", "beta[7]"), ncol=4)
 
 # Internal validation: LOO and PSIS score
 loo_normal_model <- loo(fit_normal_model, save_psis = TRUE)
@@ -83,14 +80,11 @@ print(fit_robust_model)
 posterior_robust_model <- as.array(fit_robust_model)
 np_robust_model <- nuts_params(fit_robust_model)
 color_scheme_set("mix-blue-pink")
-mcmc_trace(posterior_robust_model, pars=c("alpha", "beta[1]", "beta[2]", "beta[3]",
-                                          "beta[4]", "beta[5]", "beta[6]", "beta[7]"),
+mcmc_trace(posterior_robust_model, pars=c("alpha", "beta[1]", "beta[2]", "beta[3]", "beta[4]", "beta[5]", "beta[6]", "beta[7]"),
            np=np_robust_model, facet_args=list(ncol=4, strip.position="top"))
 
 # Check parameters distribution
-stan_dens(fit_robust_model, pars=c("alpha", "beta[1]", "beta[2]", "beta[3]",
-                                   "beta[4]", "beta[5]", "beta[6]", "beta[7]"),
-          ncol=4)
+stan_dens(fit_robust_model, pars=c("alpha", "beta[1]", "beta[2]", "beta[3]", "beta[4]", "beta[5]", "beta[6]", "beta[7]"), ncol=4)
 # Sigma and nu
 stan_dens(fit_robust_model, pars=c("sigma"))
 mcmc_trace(posterior_robust_model, pars=c("nu"))
