@@ -21,7 +21,7 @@ df_test = dat %>% slice(which(row_number() <= 1000))
 #                       #
 #########################
 
-# Check that modile compiles
+# Check that model compiles
 stanc("normal_model.stan")
 normal_model <- "normal_model.stan"
 
@@ -68,7 +68,7 @@ sqrt(mean((df_test$y - preds_normal_model)^2))
 #                       #
 #########################
 
-# Check that modile compiles
+# Check that model compiles
 stanc("robust_model.stan")
 robust_model <- "robust_model.stan"
 
