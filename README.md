@@ -3,7 +3,9 @@
 
 ## Problem Definition and Methods
 
-This projects shows how to build a Robust Regression model undertaking a Bayesian approach. A Robust Regression model can be used to build a predictive model when outliers or extreme values are present in the training set. To this extent, we select as training set the 1000 observations highlighited in orange (from a debutanizer column dataset), which correspond to the second half of the available data and exhibit some unusual trends.
+This projects shows how to build a Robust Regression model undertaking a Bayesian approach. Models are implemented in <i>Stan</i> and the <i>demo.R</i> file shows how to fit the models and reproduce the results hereby presented. Data description can be found in https://link.springer.com/book/10.1007/978-1-84628-480-9.
+
+A Robust Regression model can be used to build a predictive model when outliers or extreme values are present in the training set. To this extent, we select as training set the 1000 observations highlighited in orange (from a debutanizer column dataset), which correspond to the second half of the available data and exhibit some unusual trends.
 
 <img src="https://user-images.githubusercontent.com/83544651/148597791-d868f19f-29e5-44d3-ba4d-688bd2418e4a.png" width="60%" height="60%">
 
