@@ -1,5 +1,8 @@
 # Robust Regression
 
+
+## Problem Definition & Methods
+
 This projects shows how to build a Robust Regression model undertaking a Bayesian approach. A Robust Regression model can be used to build a predictive model when outliers or extreme values are present in the training set. To this extent, we select as training set the 1000 observations highlighited in orange (from a debutanizer column dataset), which correspond to the second half of the available data and exhibit some unusual trends.
 
 <img src="https://user-images.githubusercontent.com/83544651/148597791-d868f19f-29e5-44d3-ba4d-688bd2418e4a.png" width="60%" height="60%">
@@ -18,8 +21,22 @@ The parameter &nu; gives us the possibility to control the fatness of the tails,
 </ul>
 
 
+## Convergence Diagnostics
+
+For a visual assessment we show the Markov Chains of normal (left) and robust (right) regression parameters (&alpha; and &beta;). It should be noted that all the parameters reported satisfactory R-hat values close to 1.
+<img src="https://user-images.githubusercontent.com/83544651/153217137-c537a217-f3cb-4716-891f-9fd1ebad0783.png" width="100%" height="100%">
+
+## Internal Validation
+
+To compare the two models, we first use the LOO scores and the PSIS diagnostic plots where, in order for the models to be correctly specified, all the values of <i>k</i> should be &leq; 0.7. Successively, we compare the two models using y<sub>rep</sub> values, which is an analysis where we are trying to replicate the input data by simulating from the model. We do so by taking as many as many draws from the predictive distribution as the size of the original data. For the
+check, y<sub>rep</sub> values are plotted against the true observed values. Plots on the left correspond to the normal regression model while the ones on the right belong to the robust one.
+
+<img src="https://user-images.githubusercontent.com/83544651/153218534-1014b33d-404e-426e-bc11-628e16c30557.png" width="60%" height="60%">
 
 <img src="https://user-images.githubusercontent.com/83544651/153211101-5b5667b3-2a3d-4f58-8b47-d53c3a50fffa.png" width="60%" height="60%">
 
 
+## External Validation
+
+We can compare the predictions of completely new observations by computing the root mean squared error (RMSE) between the actual values and the ones predicted by the two models. Even in this case the robust regression models outperforms the normal regression model. Indeed, with the first model we obtained an RMSE of 0.210 while with the second model the RMSE is equal to 0.144.
 
