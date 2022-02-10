@@ -7,7 +7,7 @@ This project shows how to build a Robust Regression model undertaking a Bayesian
 
 A Robust Regression model can be used to build a predictive model when outliers or extreme values are present in the training set. To this extent, we select as training set the 1000 observations highlighited in orange (from a debutanizer column dataset), which correspond to the second half of the available data and exhibit some unusual trends.
 
-<img src="https://user-images.githubusercontent.com/83544651/148597791-d868f19f-29e5-44d3-ba4d-688bd2418e4a.png" width="60%" height="60%">
+<img src="https://user-images.githubusercontent.com/83544651/148597791-d868f19f-29e5-44d3-ba4d-688bd2418e4a.png" width="100%" height="100%">
 
 Two models have been used and compared. The first model is a multiple linear regression model which assumes the normality of the residuals, &epsilon; &sim; N(0, &sigma;): y &sim; N(&alpha; + &beta;x, &sigma;).
 
@@ -33,9 +33,9 @@ For a visual assessment we show the Markov Chains of normal (left) and robust (r
 To compare the two models, we first use the LOO scores and the PSIS diagnostic plots where, in order for the models to be correctly specified, all the values of <i>k</i> should be &leq; 0.7. Successively, we compare the two models using y<sub>rep</sub> values, which is an analysis where we are trying to replicate the input data by simulating from the model. We do so by taking as many as many draws from the predictive distribution as the size of the original data. For the
 check, y<sub>rep</sub> values are plotted against the true observed values. Plots on the left correspond to the normal regression model while the ones on the right belong to the robust one.
 
-<img src="https://user-images.githubusercontent.com/83544651/153218534-1014b33d-404e-426e-bc11-628e16c30557.png" width="60%" height="60%">
+<img src="https://user-images.githubusercontent.com/83544651/153218534-1014b33d-404e-426e-bc11-628e16c30557.png" width="100%" height="100%">
 
-<img src="https://user-images.githubusercontent.com/83544651/153211101-5b5667b3-2a3d-4f58-8b47-d53c3a50fffa.png" width="60%" height="60%">
+<img src="https://user-images.githubusercontent.com/83544651/153211101-5b5667b3-2a3d-4f58-8b47-d53c3a50fffa.png" width="100%" height="100%">
 
 
 ## External Validation
