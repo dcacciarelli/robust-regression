@@ -1,5 +1,5 @@
 # Robust Regression
-
+Bayesian Data Analysis project.
 
 ## Problem Definition and Methods
 
