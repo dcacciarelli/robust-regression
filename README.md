@@ -1,5 +1,5 @@
 # Robust Regression
-Project work for the Bayesian Data Analysis course.
+Project work for the *Bayesian Data Analysis* course.
 
 ## Summary
 This repo contains:
