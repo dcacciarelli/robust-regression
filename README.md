@@ -1,6 +1,14 @@
 # Robust Regression
 Project work for the Bayesian Data Analysis course.
 
+## Summary
+This repo contains:
+1. `normal_model.stan`: traditional regression model assuming normality of the residuals.
+2. `normal_model_QR_reparametrization.stan`: traditional regression model assuming normality of the residuals, with QR reparametrization of the coefficients to favor convergence.
+3. `robust_model.stan`: regression model assuming a t-Student distribution for the residuals.
+
+A working file for these models is provided in `demo.R`
+
 ## Problem Definition and Methods
 
 This project shows how to build a Robust Regression model undertaking a Bayesian approach. Models are implemented in <i>Stan</i> and the <i>demo.R</i> file shows how to fit the models and reproduce the results hereby presented. Data description can be found in https://link.springer.com/book/10.1007/978-1-84628-480-9.
