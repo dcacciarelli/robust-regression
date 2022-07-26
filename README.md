@@ -7,7 +7,7 @@ This repo contains:
 2. `normal_model_QR_reparametrization.stan`: traditional regression model assuming normality of the residuals, with QR reparametrization of the coefficients to favor convergence.
 3. `robust_model.stan`: regression model assuming a t-Student distribution for the residuals.
 
-A working file for these models is provided in `demo.R`
+A working file for these models is provided in `demo.R`.
 
 ## Problem Definition and Methods
 
