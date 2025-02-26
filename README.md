@@ -21,21 +21,19 @@ Standard regression assumes **normally distributed residuals**. However, in real
 
 ### **Model Comparison**
 1. **Normal Regression:**
-   - Assumes residuals follow \( \epsilon \sim N(0, \sigma) \)
-   - Model: \( y \sim N(\alpha + \eta x, \sigma) \)
+   - Assumes residuals follow $\epsilon \sim N(0, \sigma)$
+   - Model: $y \sim N(\alpha + \beta x, \sigma)$
 
 2. **Robust Regression (t-distribution):**
    - Allows heavy-tailed errors, reducing outlier impact.
-   - Model: \( y \sim t(
-u, \alpha + \eta x, \sigma) \)
+   - Model: $y \sim t(\nu, \alpha + \beta x, \sigma)$
    - Parameter **ν** controls tail fatness.
 
 ### **Bayesian Priors**
-- \( \alpha \sim N(0, 10) \) (Intercept)
-- \( \eta \sim N(0, 10) \) (Coefficients)
-- \( \sigma \sim Inv-\chi^2(10) \) (Error scale)
-- \( 
-u \sim \chi^2(5) \) (Degrees of freedom for t-distribution)
+- $\alpha \sim N(0, 10)$ (Intercept)
+- $\beta \sim N(0, 10)$ (Coefficients)
+- $\sigma \sim \text{Inv-}\chi^2(10)$ (Error scale)
+- $\nu \sim \chi^2(5)$ (Degrees of freedom for t-distribution)
 
 ## ✅ **Convergence Diagnostics**
 Below are the **Markov Chains** for normal (left) and robust (right) regression parameters (α and β). All parameters show satisfactory **R-hat values ≈1**, indicating good convergence.
